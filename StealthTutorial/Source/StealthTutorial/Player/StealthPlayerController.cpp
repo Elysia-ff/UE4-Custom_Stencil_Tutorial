@@ -3,6 +3,7 @@
 
 #include "StealthPlayerController.h"
 
+#include "Character/Hitman.h"
 #include "Player/StealthPlayerCamera.h"
 
 AStealthPlayerController::AStealthPlayerController(const FObjectInitializer& ObjectInitializer)
@@ -10,6 +11,10 @@ AStealthPlayerController::AStealthPlayerController(const FObjectInitializer& Obj
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bShowMouseCursor = true;
+
+	static ConstructorHelpers::FObjectFinder<UClass> HitmanObjectFinder(TEXT("Blueprint'/Game/Blueprint/Character/BP_Hitman.BP_Hitman_C'"));
+	check(HitmanObjectFinder.Succeeded());
+	HitmanBlueprint = HitmanObjectFinder.Object;
 }
 
 void AStealthPlayerController::PlayerTick(float DeltaTime)
@@ -49,4 +54,17 @@ void AStealthPlayerController::PlayerTick(float DeltaTime)
 			}
 		}
 	}
+}
+
+void AStealthPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	check(HitmanBlueprint);
+
+	FActorSpawnParameters Param;
+	Param.Owner = this;
+	Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	Hitman = GetWorld()->SpawnActor<AHitman>(HitmanBlueprint, FVector(0.0f, 0.0f, 90.0f), FRotator::ZeroRotator, Param);
 }

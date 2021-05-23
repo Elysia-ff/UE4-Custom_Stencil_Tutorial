@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "StealthPlayerController.generated.h"
 
+class AHitman;
+
 /**
  * 
  */
@@ -18,4 +20,14 @@ public:
 	AStealthPlayerController(const FObjectInitializer& ObjectInitializer);
 
 	virtual void PlayerTick(float DeltaTime) override;
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	UPROPERTY()
+	UClass* HitmanBlueprint;
+
+	UPROPERTY()
+	AHitman* Hitman;
 };
