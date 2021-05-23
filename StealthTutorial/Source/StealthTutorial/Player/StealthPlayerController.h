@@ -14,4 +14,8 @@ class STEALTHTUTORIAL_API AStealthPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+public:
+	AStealthPlayerController(const FObjectInitializer& ObjectInitializer);
+
+	virtual void PlayerTick(float DeltaTime) override;
 };
