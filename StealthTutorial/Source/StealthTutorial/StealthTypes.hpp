@@ -4,15 +4,4 @@
 
 #include "CoreMinimal.h"
 
-template <ECollisionChannel Channel>
-struct FCollisionChannelWrapper
-{
-	static const ECollisionChannel Value = Channel;
-
-	constexpr operator ECollisionChannel()
-	{
-		return Value;
-	};
-};
-
-static FCollisionChannelWrapper<ECC_GameTraceChannel1> ECC_ObstacleTrace;
+#define ECC_ObstacleTrace ECC_GameTraceChannel1
