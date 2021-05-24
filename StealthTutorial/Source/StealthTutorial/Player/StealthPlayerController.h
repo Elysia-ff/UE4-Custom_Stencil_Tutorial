@@ -24,10 +24,21 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	virtual void SetupInputComponent() override;
+
+private:
+	void OnRMBPressed();
+
+	void OnRMBReleased();
+
+	void MoveHitmanToMouseCursor();
+
 private:
 	UPROPERTY()
 	UClass* HitmanBlueprint;
 
 	UPROPERTY()
 	AHitman* Hitman;
+
+	bool bOnRMB;
 };

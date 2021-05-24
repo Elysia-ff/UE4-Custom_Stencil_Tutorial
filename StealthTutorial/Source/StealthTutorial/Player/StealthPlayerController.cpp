@@ -3,6 +3,7 @@
 
 #include "StealthPlayerController.h"
 
+#include "Character/Controller/HitmanAIController.h"
 #include "Character/Hitman.h"
 #include "Player/StealthPlayerCamera.h"
 
@@ -54,6 +55,11 @@ void AStealthPlayerController::PlayerTick(float DeltaTime)
 			}
 		}
 	}
+
+	if (bOnRMB)
+	{
+		MoveHitmanToMouseCursor();
+	}
 }
 
 void AStealthPlayerController::BeginPlay()
@@ -67,4 +73,36 @@ void AStealthPlayerController::BeginPlay()
 	Param.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	Hitman = GetWorld()->SpawnActor<AHitman>(HitmanBlueprint, FVector(0.0f, 0.0f, 90.0f), FRotator::ZeroRotator, Param);
+	check(Hitman);
+	Hitman->SpawnDefaultController();
+}
+
+void AStealthPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	InputComponent->BindAction("RMB", IE_Pressed, this, &AStealthPlayerController::OnRMBPressed);
+	InputComponent->BindAction("RMB", IE_Released, this, &AStealthPlayerController::OnRMBReleased);
+}
+
+void AStealthPlayerController::OnRMBPressed()
+{
+	bOnRMB = true;
+}
+
+void AStealthPlayerController::OnRMBReleased()
+{
+	bOnRMB = false;
+}
+
+void AStealthPlayerController::MoveHitmanToMouseCursor()
+{
+	FHitResult HitResult;
+	if (GetHitResultUnderCursor(ECollisionChannel::ECC_Visibility, false, HitResult))
+	{
+		FVector TargetLocation = HitResult.ImpactPoint;
+
+		check(Hitman && Hitman->GetController<AHitmanAIController>());
+		Hitman->GetController<AHitmanAIController>()->MoveToLocation(TargetLocation);
+	}
 }

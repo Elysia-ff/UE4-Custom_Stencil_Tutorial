@@ -14,4 +14,6 @@ class STEALTHTUTORIAL_API AHitman : public AStealthCharacter
 {
 	GENERATED_BODY()
 	
+public:
+	AHitman(const FObjectInitializer& ObjectInitializer);
 };
