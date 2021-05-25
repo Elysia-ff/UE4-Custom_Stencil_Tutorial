@@ -26,13 +26,15 @@ public:
 private:
 	void DrawMesh();
 
-	void AddLineOfSightPoints(TArray<FVector>* ViewPoints);
+	void AddLineOfSightPoints();
 
-	void AddNearSightPoints(TArray<FVector>* ViewPoints);
+	void AddNearSightPoints();
 
 	FVector GetDirection(float AngleInDegrees) const;
 
 	FViewCastInfo ViewCast(float AngleInDegrees, float Distance) const;
+
+	void FindEdge(FViewCastInfo ViewCastA, FViewCastInfo ViewCastB, float Distance);
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Line Of Sight|Debug")
@@ -55,4 +57,29 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Line Of Sight|Near", meta = (UIMin = 0))
 	float NearDistance = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Line Of Sight|Edge")
+	float EdgeFindingThreshold = 0.01f;
+
+private:
+	UPROPERTY()
+	TArray<FVector> ViewPoints;
+
+	UPROPERTY()
+	TArray<FVector> Vertices;
+
+	UPROPERTY()
+	TArray<int32> Triangles;
+
+	UPROPERTY()
+	TArray<FVector> Normals;
+
+	UPROPERTY()
+	TArray<FVector2D> UV0;
+
+	UPROPERTY()
+	TArray<FLinearColor> VertexColors;
+
+	UPROPERTY()
+	TArray<FProcMeshTangent> Tangents;
 };

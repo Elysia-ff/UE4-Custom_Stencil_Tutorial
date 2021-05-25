@@ -32,16 +32,14 @@ void ULosComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FAc
 
 void ULosComponent::DrawMesh()
 {
-	TArray<FVector> ViewPoints;
-	AddLineOfSightPoints(&ViewPoints);
-	AddNearSightPoints(&ViewPoints);
+	ViewPoints.Reset();
+	AddLineOfSightPoints();
+	AddNearSightPoints();
 
-	TArray<FVector> Vertices;
-	Vertices.Reserve(ViewPoints.Num() + 1);
+	Vertices.Reset(ViewPoints.Num() + 1);
 	Vertices.Add(FVector::ZeroVector);
 
-	TArray<int32> Triangles;
-	Triangles.Reserve((ViewPoints.Num() - 1) * 3);
+	Triangles.Reset((ViewPoints.Num() - 1) * 3);
 
 	int32 ViewPointsNum = ViewPoints.Num();
 	for (int32 i = 0; i < ViewPointsNum; i++)
@@ -61,45 +59,53 @@ void ULosComponent::DrawMesh()
 		}
 	}
 
-	TArray<FVector> Normals;
-	TArray<FVector2D> UV0;
-	TArray<FLinearColor> VertexColors;
-	TArray<FProcMeshTangent> Tangents;
 	CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UV0, VertexColors, Tangents, false);
 }
 
-void ULosComponent::AddLineOfSightPoints(TArray<FVector>* ViewPoints)
+void ULosComponent::AddLineOfSightPoints()
 {
-	check(ViewPoints);
 	check(FarViewCastCount >= 2);
 
 	float StartAngle = -FarSightAngle * 0.5f;
 	float DeltaAngle = (float)FarSightAngle / (FarViewCastCount - 1);
 
+	FViewCastInfo OldViewCast;
 	for (int32 i = 0; i < FarViewCastCount; i++)
 	{
 		float Angle = StartAngle + (DeltaAngle * i);
 		FViewCastInfo ViewCastInfo = ViewCast(Angle, FarDistance);
 
-		ViewPoints->Add(ViewCastInfo.Point);
+		if (i > 0 && OldViewCast != ViewCastInfo)
+		{
+			FindEdge(OldViewCast, ViewCastInfo, FarDistance);
+		}
+
+		ViewPoints.Add(ViewCastInfo.Point);
+		OldViewCast = ViewCastInfo;
 	}
 }
 
-void ULosComponent::AddNearSightPoints(TArray<FVector>* ViewPoints)
+void ULosComponent::AddNearSightPoints()
 {
-	check(ViewPoints);
 	check(NearViewCastCount >= 2);
 
 	float NearSightAngle = 360.0f - FarSightAngle;
 	float StartAngle = FarSightAngle * 0.5f;
 	float DeltaAngle = NearSightAngle / (NearViewCastCount - 1);
 
+	FViewCastInfo OldViewCast;
 	for (int32 i = 0; i < NearViewCastCount; i++)
 	{
 		float Angle = StartAngle + (DeltaAngle * i);
 		FViewCastInfo ViewCastInfo = ViewCast(Angle, NearDistance);
 
-		ViewPoints->Add(ViewCastInfo.Point);
+		if (i > 0 && OldViewCast != ViewCastInfo)
+		{
+			FindEdge(OldViewCast, ViewCastInfo, NearDistance);
+		}
+
+		ViewPoints.Add(ViewCastInfo.Point);
+		OldViewCast = ViewCastInfo;
 	}
 }
 
@@ -119,8 +125,36 @@ FViewCastInfo ULosComponent::ViewCast(float AngleInDegrees, float Distance) cons
 	FHitResult HitResult;
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, LineStart, LineEnd, ECC_ObstacleTrace))
 	{
-		return FViewCastInfo(HitResult.ImpactPoint);
+		return FViewCastInfo(HitResult.Actor, HitResult.ImpactPoint, AngleInDegrees, HitResult.ImpactNormal);
 	}
 	
-	return FViewCastInfo(LineEnd);
+	return FViewCastInfo(nullptr, LineEnd, AngleInDegrees, FVector_NetQuantizeNormal::ZeroVector);
+}
+
+void ULosComponent::FindEdge(FViewCastInfo ViewCastA, FViewCastInfo ViewCastB, float Distance)
+{
+	check(EdgeFindingThreshold > 0.0f);
+
+	if (FMath::Abs(ViewCastA.AngleInDegrees - ViewCastB.AngleInDegrees) <= EdgeFindingThreshold)
+	{
+		ViewPoints.Add(ViewCastA.Point);
+		ViewPoints.Add(ViewCastB.Point);
+		return;
+	}
+
+	float Angle = (ViewCastA.AngleInDegrees + ViewCastB.AngleInDegrees) * 0.5f;
+	FViewCastInfo NewViewCast = ViewCast(Angle, Distance);
+	if (ViewCastA == NewViewCast)
+	{
+		FindEdge(NewViewCast, ViewCastB, Distance);
+	}
+	else if (ViewCastB == NewViewCast)
+	{
+		FindEdge(ViewCastA, NewViewCast, Distance);
+	}
+	else
+	{
+		FindEdge(ViewCastA, NewViewCast, Distance);
+		FindEdge(NewViewCast, ViewCastB, Distance);
+	}
 }
