@@ -6,6 +6,8 @@
 #include "Character/StealthCharacter.h"
 #include "Hitman.generated.h"
 
+class ULosComponent;
+
 /**
  * 
  */
@@ -16,4 +18,8 @@ class STEALTHTUTORIAL_API AHitman : public AStealthCharacter
 	
 public:
 	AHitman(const FObjectInitializer& ObjectInitializer);
+
+public:
+	UPROPERTY(VisibleAnywhere, Category = "Line Of Sight")
+	ULosComponent* LosComponent;
 };
