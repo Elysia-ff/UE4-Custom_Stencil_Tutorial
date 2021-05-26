@@ -11,6 +11,7 @@ ULosComponent::ULosComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	SetCastShadow(false);
 }
 
 void ULosComponent::BeginPlay()
