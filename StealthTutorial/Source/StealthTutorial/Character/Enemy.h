@@ -21,7 +21,22 @@ public:
 
 	virtual FVector GetSpotPointLocation() const override;
 
+	virtual void OnBeginSpotted() override;
+
+	virtual void OnEndSpotted() override;
+
+private:
+	void TurnOutlineOn();
+
+	void TurnOutlineOff();
+
 public:
 	UPROPERTY(VisibleAnywhere, Category = "Line Of Sight")
 	USceneComponent* SpotPoint;
+
+	UPROPERTY(EditAnywhere, Category = "Line Of Sight")
+	float OutlineDuration;
+
+private:
+	FTimerHandle OutlineTimer;
 };

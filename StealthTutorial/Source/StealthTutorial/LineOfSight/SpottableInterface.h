@@ -20,7 +20,18 @@ class STEALTHTUTORIAL_API ISpottable
 {
 	GENERATED_BODY()
 
+	friend class ULosComponent;
+
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	virtual FVector GetSpotPointLocation() const = 0;
+
+	bool IsSpotting() const { return bIsSpotting; };
+
+	virtual void OnBeginSpotted() {}
+
+	virtual void OnEndSpotted() {}
+
+private:
+	bool bIsSpotting;
 };

@@ -178,11 +178,30 @@ void ULosComponent::FindActorsInSight()
 
 	for (int32 i = 0; i < SpotCandidates.Num(); i++)
 	{
-		if (SpotCandidates[i] && IsInSight(SpotCandidates[i]))
+		if (!SpotCandidates[i])
+		{
+			continue;
+		}
+
+		if (IsInSight(SpotCandidates[i]))
 		{
 			SpottedList.Add(SpotCandidates[i]);
+			
+			if (!SpotCandidates[i]->bIsSpotting)
+			{
+				SpotCandidates[i]->bIsSpotting = true;
+				SpotCandidates[i]->OnBeginSpotted();
+			}
 
 			DrawDebugLine(GetWorld(), GetComponentLocation(), SpotCandidates[i]->GetSpotPointLocation(), FColor::Red, false, SpotInterval, (uint8)'\000', 5.0f);
+		}
+		else
+		{
+			if (SpotCandidates[i]->bIsSpotting)
+			{
+				SpotCandidates[i]->bIsSpotting = false;
+				SpotCandidates[i]->OnEndSpotted();
+			}
 		}
 	}
 }
