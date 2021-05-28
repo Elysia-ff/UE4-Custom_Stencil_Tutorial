@@ -17,11 +17,9 @@ public:
 	// Sets default values for this actor's properties
 	AEnemySpawnManager(const FObjectInitializer& ObjectInitializer);
 
-	const TArray<AEnemy*>* GetEnemies() const;
+	void BeginSpawn();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	const TArray<AEnemy*>* GetEnemies() const;
 
 private:
 	void SpawnEnemy(const FTransform& SpawnTransform);

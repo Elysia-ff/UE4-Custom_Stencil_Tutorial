@@ -3,7 +3,12 @@
 
 #include "EnemySpawnManager.h"
 
+#include <Engine/Classes/Kismet/GameplayStatics.h>
+
 #include "Character/Enemy.h"
+#include "Character/Hitman.h"
+#include "LineOfSight/LosComponent.h"
+#include "Player/StealthPlayerController.h"
 
 // Sets default values
 AEnemySpawnManager::AEnemySpawnManager(const FObjectInitializer& ObjectInitializer)
@@ -17,16 +22,8 @@ AEnemySpawnManager::AEnemySpawnManager(const FObjectInitializer& ObjectInitializ
 	EnemyBlueprint = EnemyObjectFinder.Object;
 }
 
-const TArray<AEnemy*>* AEnemySpawnManager::GetEnemies() const
+void AEnemySpawnManager::BeginSpawn()
 {
-	return &Enemies;
-}
-
-// Called when the game starts or when spawned
-void AEnemySpawnManager::BeginPlay()
-{
-	Super::BeginPlay();
-	
 	Enemies.Reserve(SpawnPoses.Num());
 	for (int32 i = 0; i < SpawnPoses.Num(); i++)
 	{
@@ -38,6 +35,11 @@ void AEnemySpawnManager::BeginPlay()
 
 		SpawnEnemy(SpawnPoses[i]->GetTransform());
 	}
+}
+
+const TArray<AEnemy*>* AEnemySpawnManager::GetEnemies() const
+{
+	return &Enemies;
 }
 
 void AEnemySpawnManager::SpawnEnemy(const FTransform& SpawnTransform)
@@ -53,4 +55,14 @@ void AEnemySpawnManager::SpawnEnemy(const FTransform& SpawnTransform)
 
 	NewEnemy->SpawnDefaultController();
 	Enemies.Add(NewEnemy);
+
+	AStealthPlayerController* Controller = Cast<AStealthPlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (Controller)
+	{
+		AHitman* Hitman = Controller->GetHitman();
+		if (Hitman)
+		{
+			Hitman->LosComponent->RegisterSpottableObject(TScriptInterface<ISpottable>(NewEnemy));
+		}
+	}
 }

@@ -5,6 +5,7 @@
 
 #include <Engine/Public/DrawDebugHelpers.h>
 
+#include "LineOfSight/SpottableInterface.h"
 #include "StealthTypes.hpp"
 
 ULosComponent::ULosComponent(const FObjectInitializer& ObjectInitializer)
@@ -12,6 +13,7 @@ ULosComponent::ULosComponent(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	SetCastShadow(false);
+	SetCollisionProfileName(TEXT("NoCollision"));
 }
 
 void ULosComponent::BeginPlay()
@@ -22,6 +24,11 @@ void ULosComponent::BeginPlay()
 	{
 		SetMaterial(0, DebugMaterial);
 	}
+
+	if (SpotInterval > 0.0f)
+	{
+		GetWorld()->GetTimerManager().SetTimer(SpotTimer, this, &ULosComponent::FindActorsInSight, SpotInterval, true);
+	}
 }
 
 void ULosComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -29,6 +36,11 @@ void ULosComponent::TickComponent(float DeltaTime, enum ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	DrawMesh();
+}
+
+void ULosComponent::RegisterSpottableObject(const TScriptInterface<ISpottable>& NewInterface)
+{
+	SpotCandidates.Add(NewInterface);
 }
 
 void ULosComponent::DrawMesh()
@@ -158,4 +170,54 @@ void ULosComponent::FindEdge(FViewCastInfo ViewCastA, FViewCastInfo ViewCastB, f
 		FindEdge(ViewCastA, NewViewCast, Distance);
 		FindEdge(NewViewCast, ViewCastB, Distance);
 	}
+}
+
+void ULosComponent::FindActorsInSight()
+{
+	SpottedList.Reset();
+
+	for (int32 i = 0; i < SpotCandidates.Num(); i++)
+	{
+		if (SpotCandidates[i] && IsInSight(SpotCandidates[i]))
+		{
+			SpottedList.Add(SpotCandidates[i]);
+
+			DrawDebugLine(GetWorld(), GetComponentLocation(), SpotCandidates[i]->GetSpotPointLocation(), FColor::Red, false, SpotInterval, (uint8)'\000', 5.0f);
+		}
+	}
+}
+
+bool ULosComponent::IsInSight(const TScriptInterface<ISpottable>& Target) const
+{
+	FVector Dir = (Target->GetSpotPointLocation() - GetComponentLocation());
+	float SqrDistanceToTarget = Dir.SizeSquared();
+
+	if (SqrDistanceToTarget <= NearDistance * NearDistance)
+	{
+		return true;
+	}
+	else if (SqrDistanceToTarget <= FarDistance * FarDistance)
+	{
+		float AngleInDegrees = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(GetForwardVector(), Dir.GetSafeNormal())));
+		float HalfFarSightAngle = FarSightAngle * 0.5f;
+		
+		if (-HalfFarSightAngle <= AngleInDegrees && AngleInDegrees <= HalfFarSightAngle)
+		{
+			check(GetOwner());
+
+			FHitResult HitResult;
+			FCollisionQueryParams Param;
+			Param.AddIgnoredActor(GetOwner());
+			
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, GetComponentLocation(), Target->GetSpotPointLocation(), ECC_Camera, Param))
+			{
+				if (HitResult.Actor.IsValid() && HitResult.Actor == Target.GetObject())
+				{
+					return true;
+				}
+			}
+		}
+	}
+	
+	return false;
 }

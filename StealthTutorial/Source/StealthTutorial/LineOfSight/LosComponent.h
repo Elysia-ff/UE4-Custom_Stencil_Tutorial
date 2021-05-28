@@ -8,6 +8,8 @@
 #include "ProceduralMeshComponent.h"
 #include "LosComponent.generated.h"
 
+class ISpottable;
+
 /**
  * 
  */
@@ -23,6 +25,8 @@ public:
 
 	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void RegisterSpottableObject(const TScriptInterface<ISpottable>& NewInterface);
+
 private:
 	void DrawMesh();
 
@@ -35,6 +39,10 @@ private:
 	FViewCastInfo ViewCast(float AngleInDegrees, float Distance) const;
 
 	void FindEdge(FViewCastInfo ViewCastA, FViewCastInfo ViewCastB, float Distance);
+
+	void FindActorsInSight();
+
+	bool IsInSight(const TScriptInterface<ISpottable>& Target) const;
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Line Of Sight|Debug")
@@ -61,25 +69,29 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Line Of Sight|Edge")
 	float EdgeFindingThreshold = 0.01f;
 
+	UPROPERTY(EditAnywhere, Category = "Line Of Sight")
+	float SpotInterval;
+
 private:
-	UPROPERTY()
 	TArray<FVector> ViewPoints;
 
-	UPROPERTY()
 	TArray<FVector> Vertices;
 
-	UPROPERTY()
 	TArray<int32> Triangles;
 
-	UPROPERTY()
 	TArray<FVector> Normals;
 
-	UPROPERTY()
 	TArray<FVector2D> UV0;
 
-	UPROPERTY()
 	TArray<FLinearColor> VertexColors;
 
-	UPROPERTY()
 	TArray<FProcMeshTangent> Tangents;
+
+	UPROPERTY()
+	TArray<TScriptInterface<ISpottable>> SpotCandidates;
+
+	UPROPERTY()
+	TArray<TScriptInterface<ISpottable>> SpottedList;
+
+	FTimerHandle SpotTimer;
 };

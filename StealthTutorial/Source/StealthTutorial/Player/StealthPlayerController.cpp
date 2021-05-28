@@ -3,9 +3,12 @@
 
 #include "StealthPlayerController.h"
 
+#include <Engine/Public/EngineUtils.h>
+
 #include "Character/Controller/HitmanAIController.h"
 #include "Character/Hitman.h"
 #include "Player/StealthPlayerCamera.h"
+#include "SpawnManager/EnemySpawnManager.h"
 
 AStealthPlayerController::AStealthPlayerController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -62,6 +65,13 @@ void AStealthPlayerController::PlayerTick(float DeltaTime)
 	}
 }
 
+AHitman* AStealthPlayerController::GetHitman() const
+{
+	check(Hitman);
+
+	return Hitman;
+}
+
 void AStealthPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -75,6 +85,12 @@ void AStealthPlayerController::BeginPlay()
 	Hitman = GetWorld()->SpawnActor<AHitman>(HitmanBlueprint, FVector(0.0f, 0.0f, 90.0f), FRotator::ZeroRotator, Param);
 	check(Hitman);
 	Hitman->SpawnDefaultController();
+
+	TActorIterator<AEnemySpawnManager> Iterator(GetWorld());
+	if (Iterator)
+	{
+		Iterator->BeginSpawn();
+	}
 }
 
 void AStealthPlayerController::SetupInputComponent()

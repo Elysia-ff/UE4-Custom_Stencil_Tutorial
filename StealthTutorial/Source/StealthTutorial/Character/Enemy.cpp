@@ -10,4 +10,12 @@ AEnemy::AEnemy(const FObjectInitializer& ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = false;
 	AIControllerClass = AEnemyAIController::StaticClass();
+
+	SpotPoint = CreateDefaultSubobject<USceneComponent>(TEXT("SpotPoint"));
+	SpotPoint->SetupAttachment(RootComponent);
+}
+
+FVector AEnemy::GetSpotPointLocation() const
+{
+	return SpotPoint->GetComponentLocation();
 }
