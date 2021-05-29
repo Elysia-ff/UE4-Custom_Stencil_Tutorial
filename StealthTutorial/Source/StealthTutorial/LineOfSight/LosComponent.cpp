@@ -208,32 +208,44 @@ void ULosComponent::FindActorsInSight()
 
 bool ULosComponent::IsInSight(const TScriptInterface<ISpottable>& Target) const
 {
-	FVector Dir = (Target->GetSpotPointLocation() - GetComponentLocation());
+	FVector ComponentLocation = GetComponentLocation();
+	FVector TargetLocation = Target->GetSpotPointLocation();
+	TargetLocation.Z = ComponentLocation.Z;
+
+	FVector Dir = (TargetLocation - ComponentLocation);
 	float SqrDistanceToTarget = Dir.SizeSquared();
 
+	if (SqrDistanceToTarget > FarDistance * FarDistance)
+	{
+		return false;
+	}
+
+	bool bInSight = false;
 	if (SqrDistanceToTarget <= NearDistance * NearDistance)
 	{
-		return true;
+		bInSight = true;
 	}
-	else if (SqrDistanceToTarget <= FarDistance * FarDistance)
+	else
 	{
 		float AngleInDegrees = FMath::RadiansToDegrees(FMath::Acos(FVector::DotProduct(GetForwardVector(), Dir.GetSafeNormal())));
 		float HalfFarSightAngle = FarSightAngle * 0.5f;
-		
-		if (-HalfFarSightAngle <= AngleInDegrees && AngleInDegrees <= HalfFarSightAngle)
-		{
-			check(GetOwner());
 
-			FHitResult HitResult;
-			FCollisionQueryParams Param;
-			Param.AddIgnoredActor(GetOwner());
-			
-			if (GetWorld()->LineTraceSingleByChannel(HitResult, GetComponentLocation(), Target->GetSpotPointLocation(), ECC_Camera, Param))
+		bInSight = (-HalfFarSightAngle <= AngleInDegrees && AngleInDegrees <= HalfFarSightAngle);
+	}
+
+	if (bInSight)
+	{
+		check(GetOwner());
+
+		FHitResult HitResult;
+		FCollisionQueryParams Param;
+		Param.AddIgnoredActor(GetOwner());
+
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, ComponentLocation, Target->GetSpotPointLocation(), ECC_Camera, Param))
+		{
+			if (HitResult.Actor.IsValid() && HitResult.Actor == Target.GetObject())
 			{
-				if (HitResult.Actor.IsValid() && HitResult.Actor == Target.GetObject())
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 	}
