@@ -40,5 +40,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Movement")
 	float MoveSpeed;
 
+private:
 	FVector2D MoveInput;
 };
